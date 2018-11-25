@@ -12,7 +12,7 @@ const BigPhoto = props => {
       <View>
         <Image
           style={styles.ImageStyle}
-          source={{ uri: props.data.urls.full }}
+          source={{ uri: props.data.urls.regular }}
         />
       </View>
     </TouchableOpacity>

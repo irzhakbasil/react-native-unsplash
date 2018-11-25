@@ -11,68 +11,65 @@ import ImageList from "../../components/ImageList/ImageList";
 import BigPhoto from "../../components/BigPhoto/BigPhoto";
 import Input from "../../components/Input/Input";
 
-import { fetchPhotos } from "../../redux/actions/actions";
+import { fetchPhotos, selectPhoto, searchTermUpdater, deselectPhoto } from "../../redux/actions/actions";
 import { connect } from "react-redux";
+import { bindActionCreators } from 'redux';
 
 import PropTypes from "prop-types";
 
 class AppContainer extends Component {
-  state = {
-    photoSelected: false,
-    selectedObj: null,
-    searchTerm: "pussy"
-  };
 
   componentDidMount() {
-    this.props.fetchPhotos(this.state.searchTerm);
+    this.props.fetchPhotos(this.props.searchTerm);
+    console.log(this.props)
   }
 
   componentDidUpdate() {
-    if (this.state.searchTerm.length > 0) {
-      this.props.fetchPhotos(this.state.searchTerm);
-      this.setState({
-        searchTerm: ""
-      });
+    if (this.props.searchTerm.length > 0) {
+      this.props.fetchPhotos(this.props.searchTerm);
+      this.props.searchTermUpdater('');
     }
+    let x = {
+      error: this.props.error,
+      photoSelected: this.props.photoSelected,
+      searchTerm: this.props.searchTerm
+    }
+    console.log(x)
   }
+
   thumbClickHandler = index => {
-    const selected = Object.create(this.props.data.data[index]);
-    this.setState({
-      photoSelected: true,
-      selectedObj: selected
-    });
+    const selected = {
+        ...this.props.data[index]
+    }
+    this.props.selectPhoto(selected);
   };
 
   fallBack = () => {
-    this.setState({
-      photoSelected: false,
-      selectedObj: null
-    });
+    this.props.deselectPhoto();
   };
+
   InputHandler = text => {
-    this.setState({
-      searchTerm: text
-    });
-    this.render();
+    this.props.searchTermUpdater(text)
   };
+
   render() {
     let errMsg = "";
     let content = "";
-    this.state.photoSelected
+    this.props.photoSelected
       ? (content = (
-          <BigPhoto data={this.state.selectedObj} click={this.fallBack} />
+          <BigPhoto data={this.props.selectedObj} click={this.fallBack} />
         ))
       : (content = (
           <ImageList
-            data={this.props.data.data}
+            InputHandler={this.InputHandler}
+            data={this.props.data}
             thumbClickHandler={this.thumbClickHandler}
           />
         ));
-    if (this.props.data.error) errMsg = this.props.data.error;
+    if (this.props.error) errMsg = this.props.error;
     return (
       <ScrollView style={styles.container}>
-        <Text>{errMsg}</Text>
-        <Input InputHandler={this.InputHandler} />
+        <Text style={styles.error}>{errMsg}</Text>
         <View style={styles.thumbsContainer}>{content}</View>
       </ScrollView>
     );
@@ -88,6 +85,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgb(58, 64, 94)"
+  },
+  error: {
+    color: "red",
+    margin: 20,
+    textAlign: 'center',
+    fontSize: 25
   }
 });
 
@@ -97,11 +100,24 @@ AppContainer.propTypes = {
 
 const mapStateToProps = state => {
   return {
-    data: state
+    data: state.data,
+    error: state.error,
+    selectedObj: state.selectedObj,
+    photoSelected: state.photoSelected,
+    searchTerm: state.searchTerm
   };
 };
 
+function mapDisatchToPops(dispatch){
+  return bindActionCreators({ 
+      fetchPhotos: fetchPhotos,
+      selectPhoto: selectPhoto,
+      searchTermUpdater: searchTermUpdater,
+      deselectPhoto: deselectPhoto
+    }, dispatch)
+}
+
 export default connect(
   mapStateToProps,
-  { fetchPhotos }
+  mapDisatchToPops
 )(AppContainer);
